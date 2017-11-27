@@ -1,38 +1,48 @@
 var passport = require("passport");
 var LocalStrategy = require("passport-local").Strategy;
-var mongoURL = "mongodb://localhost:27017/login";
+var mongo = require("./mongo");
+var mongoURL = "mongodb://localhost:27017/demo3";
 var kafka = require('./kafka/client');
 
 module.exports = function(passport) {
     passport.use('login', new LocalStrategy(function(username , password, done) {
-        console.log('in passport');
-        kafka.make_request('login_topic',{"username":username,"password":password}, function(err,results){
-            console.log('in result');
-            console.log(results);
+            
+        kafka.make_request('new_topic_2',{"username":username,"password":password, "key": "login_api"}, function(err,results){
             if(err){
                 done(err,{});
             }
             else
             {
-                if(results.code == 200){
-                    done(null,{username:"bhavan@b.com",password:"a"});
+                console.log("Result in backend:passport js", JSON.stringify(results))
+                if(results){
+                    done(null,results);
                 }
                 else {
                     done(null,false);
                 }
             }
         });
-        /*try {
-            if(username == "bhavan@b.com" && password == "a"){
-                done(null,{username:"bhavan@b.com",password:"a"});
-            }
-            else
-                done(null,false);
+/*    passport.use('login', new LocalStrategy(function(username   , password, done) {
+        try {
+            mongo.connect(mongoURL, function(){
+                console.log('Connected to mongo at: ' + mongoURL);
+                var coll = mongo.collection('creds');
+
+                coll.findOne({username: username, password:password}, function(err, user){
+                    if (user) {
+                        user.password = undefined;
+                        console.log(user);
+
+                        done(null, user);
+
+                    } else {
+                        done(null, false);
+                    }
+                });
+            });
         }
         catch (e){
             done(e,{});
         }*/
     }));
 };
-
-
