@@ -25,6 +25,8 @@ require('./routes/passport')(passport);
 
 var routes = require('./routes/index');
 var hotels = require('./routes/hotels');
+var flights = require('./routes/flights');
+
 var mongoSessionURL = "mongodb://ec2-54-153-9-233.us-west-1.compute.amazonaws.com:27017/sessions";
 var expressSessions = require("express-session");
 var mongoStore = require("connect-mongo/es5")(expressSessions);
@@ -66,6 +68,7 @@ app.use(passport.initialize());
 
 app.use('/', routes);
 app.use('/hotels', hotels);
+app.use('/flights', flights);
 
 app.post('/logout', function(req,res) {
     console.log(req.session.user);
