@@ -1,13 +1,13 @@
 var passport = require("passport");
 var LocalStrategy = require("passport-local").Strategy;
-var mongo = require("./mongo");
-var mongoURL = "mongodb://localhost:27017/demo3";
+//var mongo = require("./mongo");
+//var mongoURL = "mongodb://localhost:27017/demo3";
 var kafka = require('./kafka/client');
 
 module.exports = function(passport) {
     passport.use('login', new LocalStrategy(function(username , password, done) {
-            
-        kafka.make_request('new_topic_2',{"username":username,"password":password, "key": "login_api"}, function(err,results){
+          console.log("Inside Passport login");
+        kafka.make_request('user_topic',{"email":username,"password":password, "key": "login_api"}, function(err,results){
             if(err){
                 done(err,{});
             }
