@@ -229,6 +229,24 @@ app.post('/downloadfile',  function(req, res) {
     }
 });
 
+app.get('/getCities', function(req,res){
+   try{
+       var Search_SQL = "SELECT city_name FROM city ";
+
+       mysql.executequery(Search_SQL, function (err, result) {
+           if (err) {
+               console.log(err);
+           }
+           else {
+               console.log("result of city sql "+result);
+               res.json({"data":result});
+           }
+       })
+   }catch(e){
+       console.log(e);
+   }
+})
+
 
 app.post('/sharefile',  function(req, res) {
     try {
