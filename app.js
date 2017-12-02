@@ -7,7 +7,7 @@ var bodyParser = require('body-parser');
 //var passport = require('passport');
 var cors = require('cors');
 var kafka = require('./routes/kafka/client');
-
+var mysql = require("./routes/mysql");
 
 var multer = require('multer');
 var storage = multer.memoryStorage();
