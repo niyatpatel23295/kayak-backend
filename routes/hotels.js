@@ -40,6 +40,12 @@ router.post('/add_hotel', function(req, res, next) {
             "description"  : req.body.description,
             "city"  : req.body.city,
             "hotel_image"  : req.body.hotel_image,
+            "deluxNo": req.body.deluxNo,
+            "deluxDescription":req.body.deluxDescription,
+            "premiumNo": req.body.premiumNo,
+            "premiumDescription":req.body.premiumDescription,
+            "standardNo": req.body.standardNo,
+            "standardDescription":req.body.standardDescription,
             "key"       : "add_hotel"
         }
         kafka.make_request('hotel_topic',user_data, function(err,response_kafka){
