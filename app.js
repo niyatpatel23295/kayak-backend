@@ -4,10 +4,10 @@ var path = require('path');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var passport = require('passport');
+//var passport = require('passport');
 var cors = require('cors');
 var kafka = require('./routes/kafka/client');
-
+var mysql = require("./routes/mysql");
 
 var multer = require('multer');
 var storage = multer.memoryStorage();
@@ -15,22 +15,16 @@ var upload = multer({ storage: storage });
 var fs = require('fs-extra');
 var fs_native = require('fs');
 
-//mysql
-var mysql = require("./routes/mysql");
-
-
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-require('./routes/passport')(passport);
+//require('./routes/passport')(passport);
 
 
 
 var routes = require('./routes/index');
 var hotels = require('./routes/hotels');
-var flights = require('./routes/flights');
-
 var mongoSessionURL = "mongodb://ec2-54-153-9-233.us-west-1.compute.amazonaws.com:27017/sessions";
 var expressSessions = require("express-session");
 var mongoStore = require("connect-mongo/es5")(expressSessions);
@@ -68,11 +62,10 @@ app.use(expressSessions({
         url: mongoSessionURL
     })
 }));
-app.use(passport.initialize());
+//app.use(passport.initialize());
 
 app.use('/', routes);
 app.use('/hotels', hotels);
-app.use('/flights', flights);
 
 app.post('/logout', function(req,res) {
     console.log(req.session.user);
@@ -82,39 +75,59 @@ app.post('/logout', function(req,res) {
 });
 
 app.post('/login', function(req, res) {
-    passport.authenticate('login', function(err, user) {
-        if(err) {
-            console.log(err);
-            res.status(500).send();
-        }
+    console.log("Inside App.js");
+    try {
+        var user_data = {
 
-        if(!user) {
+            "email"  : req.body.email,
+            "password"  : req.body.password,
+            "key"       : "login_api",
 
-            res.status(401).send();
         }
-        else{
-            req.session.user = user.username;
-            req.session.save();
-            console.log(req.session.user);
-            console.log("session initilized");
-            return res.status(201).send({message: "Success", data: user});            
-        }
+        console.log("UserData ",user_data);
+        kafka.make_request('user_topic',user_data, function(err,response_kafka){
+            if(err){
+                console.trace(err);
+                res.status(401).json({error: err});
+            }
+            else{
+                console.log("login response ", JSON.stringify(response_kafka));
+                req.session.user = req.body.email;
+                req.session.save();
+                console.log(req.session.user);
+                res.status(201).send({message: "Success", data : response_kafka});
 
-    })(req, res);
+            }
+
+        });
+
+    }
+    catch (e){
+        console.log(e);
+        res.send(e);
+    }
+
+
+
 });
 
 app.post('/signup', function(req, res) {
     try {
         console.log(user_data);
         var user_data = {
-            "username"  : req.body.username,
+            "firstName"  : req.body.firstName,
+            "lastName"  : req.body.lastName,
+            "address"     : req.body.address,
+            "city" : req.body.city,
+            "zipCode"  : req.body.zipCode,
+            "phoneNo"  : req.body.phoneNo,
+            "email"  : req.body.email,
             "password"  : req.body.password,
-            "email"     : req.body.email,
-            "firstname" : req.body.firstname,
-            "lastname"  : req.body.lastname,
-            "key"       : "signup_api"
+            "profilephoto"  : req.body.profilephoto,
+            "key"       : "signup_api",
+
         }
-        kafka.make_request('new_topic_2',user_data, function(err,response_kafka){
+        kafka.make_request('user_topic',user_data, function(err,response_kafka){
             if(err){
                 console.trace(err);
                 res.status(401).json({error: err});
@@ -216,6 +229,24 @@ app.post('/downloadfile',  function(req, res) {
     }
 });
 
+app.get('/getCities', function(req,res){
+   try{
+       var Search_SQL = "SELECT city_name FROM city ";
+
+       mysql.executequery(Search_SQL, function (err, result) {
+           if (err) {
+               console.log(err);
+           }
+           else {
+               console.log("result of city sql "+result);
+               res.json({"data":result});
+           }
+       })
+   }catch(e){
+       console.log(e);
+   }
+})
+
 
 app.post('/sharefile',  function(req, res) {
     try {
@@ -235,23 +266,4 @@ app.post('/sharefile',  function(req, res) {
         console.log(e)
     }
 });
-
-app.get('/getCities', function(req,res){
-    try{
-        var Search_SQL = "SELECT city_name FROM city ";
-
-        mysql.executequery(Search_SQL, function (err, result) {
-            if (err) {
-                console.log(err);
-            }
-            else {
-                console.log("result of city sql "+result);
-                res.json({"data":result});
-            }
-        })
-    }catch(e){
-        console.log(e);
-    }
-})
-
 module.exports = app;
