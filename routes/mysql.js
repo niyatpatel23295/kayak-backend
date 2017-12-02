@@ -1,4 +1,4 @@
-var mysql = require('kayak-backend/routes/mysql')
+var mysql = require('mysql')
 
 // ------------------------------------------------
 // ------------ Without connection pooling --------
