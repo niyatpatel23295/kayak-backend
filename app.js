@@ -324,6 +324,57 @@ app.post('/addCars', function(req,res){
     }
 })
 
+
+app.post('/get_car_details', function(req,res){
+    try{
+        var car_id = req.body.searchCar_key;
+        console.log("Car Model"+car_id);
+        var findCar = "select * from cars where car_id = '"+car_id+"';";
+        mysql.executequery(findCar, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of CAR sql "+result);
+                res.send({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+})
+
+app.post('/updateCars', function(req,res){
+    try{
+        var car_id = req.body.searchCar_key;
+        var car_model = req.body.car_model;
+        var no_passangers = req.body.no_passangers;
+        var no_largebags = req.body.no_largebags;
+        var no_door = req.body.no_door;
+        var car_class = req.body.car_class;
+        var price = req.body.price;
+        var c_name = req.body.city;
+        var pickup_address = req.body.pickup_address;
+
+        var update_SQL = "UPDATE cars SET car_model='"+car_model+"' ,no_passangers="+no_passangers+
+            " ,no_largebags="+no_largebags+" ,no_door="+no_door+" ,car_class='"+car_class+"' ,price="+price+
+            " ,pickup_address= '"+pickup_address+"' where car_id = '"+car_id+"';";
+        console.log(update_SQL);
+        mysql.executequery(update_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of CAR sql "+result);
+                res.json({"data":result});
+            }
+        });
+    }catch(e){
+        console.log(e);
+    }
+})
+
+
 app.post('/sharefile',  function(req, res) {
     try {
         console.log("/sharefile");
