@@ -389,5 +389,29 @@ app.post('/updateFlight', function(req,res){
     }
 });
 
+app.post('/GetFlightDetails', function(req,res){
+    try{
+        var flight_key = req.body.searchFlight_key;
+        console.log("flight_key:"+flight_key);
+
+        var Search_SQL = "SELECT * FROM flights where fid='"+flight_key+"'";
+        if(flight_key!= ''){
+            mysql.executequery(Search_SQL, function (err, result) {
+                if (err) {
+                    console.log(err);
+                }
+                else {
+                    console.log("result of flight sql "+result[0]);
+                    res.send({"data":result});
+                }
+            })
+        }else{
+            res.send({"error_message":"Flight name doesn't exists!"})
+        }
+
+    }catch(e){
+        console.log(e);
+    }
+});
 
 module.exports = app;
