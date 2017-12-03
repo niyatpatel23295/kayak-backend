@@ -68,7 +68,7 @@ router.post('/add_hotel', function(req, res, next) {
     }
 });
 
-router.post('/update_hotel', function(req, res, next) {
+/*router.post('/update_hotel', function(req, res, next) {
     try {
 
         var user_data = {
@@ -100,7 +100,79 @@ router.post('/update_hotel', function(req, res, next) {
         console.log(e);
         res.send(e);
     }
-});
+});*/
+
+
+
+router.post('/get_hotel_details', function(req,res){
+    try{
+        var hotel_key = req.body.searchHotel_key;
+        console.log("hotel_key:"+hotel_key);
+
+        var Search_SQL = "SELECT * FROM hotels where hotel_name='"+hotel_key+"'";
+        if(hotel_key!= ''){
+            mysql.executequery(Search_SQL, function (err, result) {
+                if (err) {
+                    console.log(err);
+                }
+                else {
+                    console.log("result of hotel sql "+result);
+                    res.send({"data":result});
+                }
+            })
+        }else{
+            res.send({"error_message":"Hotel Name doesn't exists"})
+        }
+
+    }catch(e){
+        console.log(e);
+    }
+})
+
+
+
+router.post('/update_hotel', function(req,res){
+    try{
+
+        var hotel_name = req.body.hotel_name;
+        var hotel_address = req.body.hotel_address;
+        var zip_code = req.body.zip_code;
+        var hotel_stars = req.body.hotel_stars;
+        var hotel_ratings = req.body.hotel_ratings;
+        var description = req.body.description;
+        var city = req.body.city;
+
+        console.log("hotel_name:"+hotel_name);
+
+        var update_SQL = "UPDATE hotels SET hotel_name = '" + hotel_name +
+            "',hotel_address='"+hotel_address+
+            "',zip_code='"+zip_code+
+            "',hotel_stars='"+hotel_stars+
+            "',hotel_ratings='"+hotel_ratings+
+            "',description='"+description+
+            "' where hotel_name ='"+hotel_name+"';";
+
+        console.log("query is "+update_SQL);
+
+            mysql.executequery(update_SQL, function (err, result) {
+                if (err) {
+                    console.log(err);
+                }
+                else {
+                    console.log("result of hotel update query "+result);
+                    res.send({"data":"update successful"});
+                }
+            })
+
+    }catch(e){
+        console.log(e);
+    }
+})
+
+
+
+
+
 
 
 module.exports = router;
