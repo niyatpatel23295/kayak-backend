@@ -342,4 +342,52 @@ app.post('/sharefile',  function(req, res) {
         console.log(e)
     }
 });
+
+app.post('/updateFlight', function(req,res){
+    try{
+        console.log("Inside Update Flight");
+        var fid = req.body.searchFlight_key;
+        var flightName = req.body.flight_name;
+        var toAirport = req.body.to_airport;
+        var fromAirport = req.body.from_airport;
+        var departure = req.body.departure;
+        var arrival = req.body.arrival;
+        var fClass = req.body.class;
+        var fair = req.body.fair;
+        var flightNumber = req.body.flight_number;
+        var duration = req.body.duration;
+        console.log("flight Name "+flightName);
+        console.log("flight Name "+toAirport);
+        console.log("flight Name "+fromAirport);
+
+        // UPDATE Customers
+        // SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'
+        // WHERE CustomerID = 1;
+
+        //var Search_SQL = "SELECT * FROM flights where hotel_name= "+hotelName;
+        var Search_SQL = "UPDATE flights SET flight_name = '" + flightName +
+            "',to_airport='"+toAirport+
+            "',from_airport='"+fromAirport+
+            "',departure='"+departure+
+            "',arrival='"+arrival+
+            "',class='"+fClass+
+            "',fair='"+fair+
+            "',flight_number='"+flightNumber+
+            "',duration="+duration+
+            " where fid ="+fid;
+        mysql.executequery(Search_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of hotel details sql "+result);
+                res.json({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+});
+
+
 module.exports = app;
