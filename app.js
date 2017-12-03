@@ -151,6 +151,39 @@ app.post('/signup', function(req, res) {
 });
 
 
+app.post('/addFlight', function(req,res){
+    try{
+        console.log("Inside Add Flight");
+        var flightName = req.body.flight_name;
+        var toAirport = req.body.to_airport;
+        var fromAirport = req.body.from_airport;
+        var departure = req.body.departure;
+        var arrival = req.body.arrival;
+        var fClass = req.body.class;
+        var fair = req.body.fair;
+        var flightNumber = req.body.flight_number;
+        var duration = req.body.duration;
+        console.log("flight Name "+flightName)
+        console.log("flight Name "+toAirport)
+        console.log("flight Name "+fromAirport)
+        //var Search_SQL = "SELECT * FROM flights where hotel_name= "+hotelName;
+        var Search_SQL = "insert into flights (flight_name,to_airport,from_airport,departure,arrival,class,fair,flight_number,duration) values('" + flightName + "','" + toAirport + "','" + fromAirport + "','" +departure+ "','" +arrival+ "','" + fClass+ "','" + fair + "','" + flightNumber + "','"+duration+"');";
+        console.log("Search_SQL ",Search_SQL);
+        mysql.executequery(Search_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of hotel details sql "+result);
+                res.json({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+});
+
+
 
 app.post('/listdir', function(req, res) {
     try {
