@@ -251,6 +251,45 @@ app.get('/getCities', function(req,res){
    }
 })
 
+app.post('/addCars', function(req,res){
+    try{
+        var car_model = req.body.car_model;
+        var no_passangers = req.body.no_passangers;
+        var no_largebags = req.body.no_largebags;
+        var no_door = req.body.no_door;
+        var car_class = req.body.car_class;
+        var price = req.body.price;
+        var c_name = req.body.city;
+        var pickup_address = req.body.pickup_address;
+        var cid ='';
+
+        var findCid = "select cid from city where city_name = '"+c_name+"';";
+        mysql.executequery(findCid, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                cid = result[0].cid;
+                console.log("result of City sql "+cid);
+                var Search_SQL = "INSERT INTO cars (car_model,cid,no_passangers,no_largebags,no_door,car_class,price,pickup_address) " +
+                    "VALUES('"+car_model+"','"+cid+"',"+no_passangers+","+no_largebags+","+no_door+",'"+car_class+"',"+price+",'"+pickup_address+"')";
+
+                console.log(Search_SQL);
+                mysql.executequery(Search_SQL, function (err, result) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        console.log("result of CAR sql "+result);
+                        res.json({"data":result});
+                    }
+                })
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+})
 
 app.post('/sharefile',  function(req, res) {
     try {
