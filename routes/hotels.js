@@ -170,6 +170,28 @@ router.post('/update_hotel', function(req,res){
 })
 
 
+//get selected hotel to book
+router.post('/get_selected_hotel', function (req, res, next) {
+    try {
+        var hotel_data = req.body.filter;
+        console.log(hotel_data);
+        global.selectedHotelDetails = {message: "Success", data: hotel_data};
+        res.status(200).send({message: "Success", data: hotel_data});
+    }
+    catch (e) {
+        console.log(e);
+        res.send(e);
+    }
+});
+
+router.get('/get_selected_hotel', function (req, res) {
+    //download file functionality
+    console.log("Backend: " + global.selectedHotelDetails);
+    res.status(201).send(global.selectedHotelDetails);
+    //return global.hotelSearchResponse;
+})
+
+
 
 
 
