@@ -159,6 +159,39 @@ app.post('/signup', function(req, res) {
 });
 
 
+app.post('/addFlight', function(req,res){
+    try{
+        console.log("Inside Add Flight");
+        var flightName = req.body.flight_name;
+        var toAirport = req.body.to_airport;
+        var fromAirport = req.body.from_airport;
+        var departure = req.body.departure;
+        var arrival = req.body.arrival;
+        var fClass = req.body.class;
+        var fair = req.body.fair;
+        var flightNumber = req.body.flight_number;
+        var duration = req.body.duration;
+        console.log("flight Name "+flightName)
+        console.log("flight Name "+toAirport)
+        console.log("flight Name "+fromAirport)
+        //var Search_SQL = "SELECT * FROM flights where hotel_name= "+hotelName;
+        var Search_SQL = "insert into flights (flight_name,to_airport,from_airport,departure,arrival,class,fair,flight_number,duration) values('" + flightName + "','" + toAirport + "','" + fromAirport + "','" +departure+ "','" +arrival+ "','" + fClass+ "','" + fair + "','" + flightNumber + "','"+duration+"');";
+        console.log("Search_SQL ",Search_SQL);
+        mysql.executequery(Search_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of hotel details sql "+result);
+                res.json({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+});
+
+
 
 app.post('/listdir', function(req, res) {
     try {
@@ -257,6 +290,114 @@ app.get('/getCities', function(req,res){
    }catch(e){
        console.log(e);
    }
+});
+
+app.get('/getAirports', function(req,res){
+    try{
+        var Search_SQL = "SELECT airport FROM airports ";
+
+        mysql.executequery(Search_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of airport sql "+result);
+                res.json({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+});
+
+app.post('/addCars', function(req,res){
+    try{
+        var car_model = req.body.car_model;
+        var no_passangers = req.body.no_passangers;
+        var no_largebags = req.body.no_largebags;
+        var no_door = req.body.no_door;
+        var car_class = req.body.car_class;
+        var price = req.body.price;
+        var c_name = req.body.city;
+        var pickup_address = req.body.pickup_address;
+        var cid ='';
+
+        var findCid = "select cid from city where city_name = '"+c_name+"';";
+        mysql.executequery(findCid, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                cid = result[0].cid;
+                console.log("result of City sql "+cid);
+                var Search_SQL = "INSERT INTO cars (car_model,cid,no_passangers,no_largebags,no_door,car_class,price,pickup_address) " +
+                    "VALUES('"+car_model+"','"+cid+"',"+no_passangers+","+no_largebags+","+no_door+",'"+car_class+"',"+price+",'"+pickup_address+"')";
+
+                console.log(Search_SQL);
+                mysql.executequery(Search_SQL, function (err, result) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    else {
+                        console.log("result of CAR sql "+result);
+                        res.json({"data":result});
+                    }
+                })
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+})
+
+
+app.post('/get_car_details', function(req,res){
+    try{
+        var car_id = req.body.searchCar_key;
+        console.log("Car Model"+car_id);
+        var findCar = "select * from cars where car_id = '"+car_id+"';";
+        mysql.executequery(findCar, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of CAR sql "+result);
+                res.send({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+})
+
+app.post('/updateCars', function(req,res){
+    try{
+        var car_id = req.body.searchCar_key;
+        var car_model = req.body.car_model;
+        var no_passangers = req.body.no_passangers;
+        var no_largebags = req.body.no_largebags;
+        var no_door = req.body.no_door;
+        var car_class = req.body.car_class;
+        var price = req.body.price;
+        var c_name = req.body.city;
+        var pickup_address = req.body.pickup_address;
+
+        var update_SQL = "UPDATE cars SET car_model='"+car_model+"' ,no_passangers="+no_passangers+
+            " ,no_largebags="+no_largebags+" ,no_door="+no_door+" ,car_class='"+car_class+"' ,price="+price+
+            " ,pickup_address= '"+pickup_address+"' where car_id = '"+car_id+"';";
+        console.log(update_SQL);
+        mysql.executequery(update_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of CAR sql "+result);
+                res.json({"data":result});
+            }
+        });
+    }catch(e){
+        console.log(e);
+    }
 })
 
 
@@ -278,6 +419,7 @@ app.post('/sharefile',  function(req, res) {
         console.log(e)
     }
 });
+
 
 app.post('/logclick', function(req,res){
     try{
@@ -317,5 +459,77 @@ app.post('/getlogs', function(req,res){
         console.log(e);   
     }
 })
+
+app.post('/updateFlight', function(req,res){
+    try{
+        console.log("Inside Update Flight");
+        var fid = req.body.searchFlight_key;
+        var flightName = req.body.flight_name;
+        var toAirport = req.body.to_airport;
+        var fromAirport = req.body.from_airport;
+        var departure = req.body.departure;
+        var arrival = req.body.arrival;
+        var fClass = req.body.class;
+        var fair = req.body.fair;
+        var flightNumber = req.body.flight_number;
+        var duration = req.body.duration;
+        console.log("flight Name "+flightName);
+        console.log("flight Name "+toAirport);
+        console.log("flight Name "+fromAirport);
+
+        // UPDATE Customers
+        // SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'
+        // WHERE CustomerID = 1;
+
+        //var Search_SQL = "SELECT * FROM flights where hotel_name= "+hotelName;
+        var Search_SQL = "UPDATE flights SET flight_name = '" + flightName +
+            "',to_airport='"+toAirport+
+            "',from_airport='"+fromAirport+
+            "',departure='"+departure+
+            "',arrival='"+arrival+
+            "',class='"+fClass+
+            "',fair='"+fair+
+            "',flight_number='"+flightNumber+
+            "',duration="+duration+
+            " where fid ="+fid;
+        mysql.executequery(Search_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of hotel details sql "+result);
+                res.json({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+});
+
+app.post('/GetFlightDetails', function(req,res){
+    try{
+        var flight_key = req.body.searchFlight_key;
+        console.log("flight_key:"+flight_key);
+
+        var Search_SQL = "SELECT * FROM flights where fid='"+flight_key+"'";
+        if(flight_key!= ''){
+            mysql.executequery(Search_SQL, function (err, result) {
+                if (err) {
+                    console.log(err);
+                }
+                else {
+                    console.log("result of flight sql "+result[0]);
+                    res.send({"data":result});
+                }
+            })
+        }else{
+            res.send({"error_message":"Flight name doesn't exists!"})
+        }
+
+    }catch(e){
+        console.log(e);
+    }
+});
+
 
 module.exports = app;
