@@ -16,6 +16,7 @@ router.post('/search_cars', function(req, res, next) {
                 res.status(401).json({error: err});
             }
             else{
+                global.carSearchResponse = {message: "Success", data : response_kafka};
                 res.status(200).send({message: "Success", data : response_kafka});
             }
         });
@@ -25,6 +26,12 @@ router.post('/search_cars', function(req, res, next) {
         console.log(e);
         res.send(e);
     }
+});
+
+router.get('/search_cars', function(req, res){
+    //download file functionality
+    console.log("Backend: "+ global.carSearchResponse);
+    res.status(201).send(global.carSearchResponse);
 });
 
 module.exports = router;
