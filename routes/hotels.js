@@ -17,6 +17,7 @@ router.post('/search_hotels', function (req, res, next) {
                 console.trace(err);
                 res.status(401).json({error: err});
             }
+
             else {
                 global.hotelSearchResponse = {message: "Success", data: response_kafka};
                 res.status(200).send({message: "Success", data: response_kafka});
@@ -171,12 +172,15 @@ router.post('/update_hotel', function (req, res) {
 })
 
 
+
 router.get('/search_hotels', function (req, res) {
     //download file functionality
     console.log("Backend: " + global.hotelSearchResponse);
     res.status(201).send(global.hotelSearchResponse);
     //return global.hotelSearchResponse;
 })
+
+
 
 //get selected hotel to book
 router.post('/get_selected_hotel', function (req, res, next) {
@@ -197,7 +201,8 @@ router.get('/get_selected_hotel', function (req, res) {
     console.log("Backend: " + global.selectedHotelDetails);
     res.status(201).send(global.selectedHotelDetails);
     //return global.hotelSearchResponse;
-})
+
+});
 
 // get selected room to book
 router.post('/get_selected_room', function (req, res, next) {
@@ -220,5 +225,12 @@ router.get('/get_selected_room', function (req, res) {
     //return global.hotelSearchResponse;
 })
 
+
+router.get('/search_hotels', function(req, res){
+   //download file functionality
+   console.log("Backend: "+ global.hotelSearchResponse);
+   res.status(201).send(global.hotelSearchResponse);
+   //return global.hotelSearchResponse;
+});
 
 module.exports = router;

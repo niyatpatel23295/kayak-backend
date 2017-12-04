@@ -16,6 +16,7 @@ router.post('/search_flights', function(req, res, next) {
                 res.status(401).json({error: err});
             }
             else{
+                global.flightSearchResponse = {message: "Success", data : response_kafka};
                 res.status(200).send({message: "Success", data : response_kafka});
             }
         });
@@ -25,6 +26,12 @@ router.post('/search_flights', function(req, res, next) {
         console.log(e);
         res.send(e);
     }
+});
+
+router.get('/search_flights', function(req, res){
+    //download file functionality
+    console.log("Backend: "+ global.flightSearchResponse);
+    res.status(201).send(global.flightSearchResponse);
 });
 
 module.exports = router;

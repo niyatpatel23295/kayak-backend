@@ -8,7 +8,7 @@ var bodyParser = require('body-parser');
 var cors = require('cors');
 var kafka = require('./routes/kafka/client');
 var mysql = require("./routes/mysql");
-
+var _ = require('lodash');
 var multer = require('multer');
 var storage = multer.memoryStorage();
 var upload = multer({ storage: storage });
@@ -18,9 +18,17 @@ var fs_native = require('fs');
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+var winston = require('winston');
 //require('./routes/passport')(passport);
-
+var logger_winston = new (winston.Logger)({
+    transports: [
+       new (winston.transports.File)({
+           name: 'click-logs',
+           filename: 'clicklogs-info.log',
+           level: 'info'
+           })
+    ]
+});
 
 
 var routes = require('./routes/index');
@@ -282,7 +290,25 @@ app.get('/getCities', function(req,res){
    }catch(e){
        console.log(e);
    }
-})
+});
+
+app.get('/getAirports', function(req,res){
+    try{
+        var Search_SQL = "SELECT airport FROM airports ";
+
+        mysql.executequery(Search_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of airport sql "+result);
+                res.json({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+});
 
 app.post('/addCars', function(req,res){
     try{
@@ -394,6 +420,46 @@ app.post('/sharefile',  function(req, res) {
     }
 });
 
+
+app.post('/logclick', function(req,res){
+    try{
+        logger_winston.info(req.body.component);
+        res.status(200).send();
+    }
+    catch(e){
+        console.log(e);
+        res.status(200).send();
+    }
+});
+
+app.post('/getlogs', function(req,res){
+    try{
+        var log = fs.readFileSync('clicklogs-info.log').toString().split('\n');
+        log.pop();
+        var log_json = [];
+        log.forEach( function(element, index) {
+            // statements
+            var element_json = JSON.parse(element);
+            element_json.value = 1;
+            log_json.push(element_json);
+        });
+
+        var result = _(log_json)
+          .map('message')
+          .uniq()
+          .map(key => ({ 
+            key, 
+            value: _(log_json).filter({ message: key }).sumBy('value')
+          }))
+          .value();
+
+        res.status(200).json(result);
+    }
+    catch(e){
+        console.log(e);   
+    }
+})
+
 app.post('/updateFlight', function(req,res){
     try{
         console.log("Inside Update Flight");
@@ -464,5 +530,6 @@ app.post('/GetFlightDetails', function(req,res){
         console.log(e);
     }
 });
+
 
 module.exports = app;
