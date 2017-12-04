@@ -8,27 +8,20 @@ var bodyParser = require('body-parser');
 var cors = require('cors');
 var kafka = require('./routes/kafka/client');
 var mysql = require("./routes/mysql");
-var _ = require('lodash');
+
 var multer = require('multer');
 var storage = multer.memoryStorage();
 var upload = multer({ storage: storage });
 var fs = require('fs-extra');
 var fs_native = require('fs');
+const bcrypt = require('bcrypt');
 
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-var winston = require('winston');
+
 //require('./routes/passport')(passport);
-var logger_winston = new (winston.Logger)({
-    transports: [
-       new (winston.transports.File)({
-           name: 'click-logs',
-           filename: 'clicklogs-info.log',
-           level: 'info'
-           })
-    ]
-});
+
 
 
 var routes = require('./routes/index');
@@ -40,7 +33,9 @@ var expressSessions = require("express-session");
 var mongoStore = require("connect-mongo/es5")(expressSessions);
 
 
-var mongo = require("mongodb").MongoClient;
+//var mongo = require("mongodb").MongoClient;
+var mongo = require("./routes/mongo");
+var mongoURL = "mongodb://localhost:27017/login";
 
 
 
@@ -53,7 +48,7 @@ app.set('view engine', 'ejs');
 app.use(logger('dev'));
 
 var corsOptions = {
-    origin: 'http://localhost:3000',
+    origin: 'http://localhost:3002',
     credentials: true,
 }
 app.use(cors(corsOptions))
@@ -86,9 +81,56 @@ app.post('/logout', function(req,res) {
     res.status(200).send();
 });
 
+
+
+/*
 app.post('/login', function(req, res) {
     console.log("Inside App.js");
     try {
+
+
+        var reqUsername = req.body.email;
+        var reqPassword = req.body.password;
+
+        var getUser = "select * from users where email='" + reqUsername + "';";
+        console.log("Query is:" + getUser);
+
+        mysql.executequery(getUser, function (err, results) {
+            if(err){
+                console.log(err);
+            }
+            else{
+
+                if (results.length > 0) {
+
+                    var hashedPassword = results[0].password;
+                    bcrypt.compare(reqPassword, hashedPassword, function(err, result) {
+                        if (err) {
+                            console.log('bcrypt - error - ', err);
+
+                        } else {
+                            console.log('bcrypt - result - ', result);
+                            console.log("User authenticated!");
+                            req.session.user = req.body.email;
+                            req.session.save();
+                            console.log(req.session.user);
+                            global.user = req.body.email;
+                            console.log("global.user "+global.user);
+                            res.status(201).send({message: "Success", data : result});
+                        }
+                    });
+                }
+                else {
+                    console.log('incorrect password')
+                }
+            }
+        });
+
+
+
+       /!*
+
+
         var user_data = {
 
             "email"  : req.body.email,
@@ -107,12 +149,14 @@ app.post('/login', function(req, res) {
                 req.session.user = req.body.email;
                 req.session.save();
                 console.log(req.session.user);
+                global.user = req.body.email;
+                console.log("global.user "+global.user);
                 res.status(201).send({message: "Success", data : response_kafka});
 
             }
 
         });
-
+*!/
     }
     catch (e){
         console.log(e);
@@ -122,6 +166,7 @@ app.post('/login', function(req, res) {
 
 
 });
+*/
 
 app.post('/signup', function(req, res) {
     try {
@@ -153,7 +198,7 @@ app.post('/signup', function(req, res) {
 
     }
     catch (e){
-        console.log(e);        
+        console.log(e);
         res.send(e);
     }
 });
@@ -231,7 +276,7 @@ app.post('/uploadfile', upload.single('file'), function(req, res) {
     }
     catch (e){
 
-    console.log(e)
+        console.log(e)
     }
 });
 
@@ -275,40 +320,22 @@ app.post('/downloadfile',  function(req, res) {
 });
 
 app.get('/getCities', function(req,res){
-   try{
-       var Search_SQL = "SELECT city_name FROM city ";
-
-       mysql.executequery(Search_SQL, function (err, result) {
-           if (err) {
-               console.log(err);
-           }
-           else {
-               console.log("result of city sql "+result);
-               res.json({"data":result});
-           }
-       })
-   }catch(e){
-       console.log(e);
-   }
-});
-
-app.get('/getAirports', function(req,res){
     try{
-        var Search_SQL = "SELECT airport FROM airports ";
+        var Search_SQL = "SELECT city_name FROM city ";
 
         mysql.executequery(Search_SQL, function (err, result) {
             if (err) {
                 console.log(err);
             }
             else {
-                console.log("result of airport sql "+result);
+                console.log("result of city sql "+result);
                 res.json({"data":result});
             }
         })
     }catch(e){
         console.log(e);
     }
-});
+})
 
 app.post('/addCars', function(req,res){
     try{
@@ -420,46 +447,6 @@ app.post('/sharefile',  function(req, res) {
     }
 });
 
-
-app.post('/logclick', function(req,res){
-    try{
-        logger_winston.info(req.body.component);
-        res.status(200).send();
-    }
-    catch(e){
-        console.log(e);
-        res.status(200).send();
-    }
-});
-
-app.post('/getlogs', function(req,res){
-    try{
-        var log = fs.readFileSync('clicklogs-info.log').toString().split('\n');
-        log.pop();
-        var log_json = [];
-        log.forEach( function(element, index) {
-            // statements
-            var element_json = JSON.parse(element);
-            element_json.value = 1;
-            log_json.push(element_json);
-        });
-
-        var result = _(log_json)
-          .map('message')
-          .uniq()
-          .map(key => ({ 
-            key, 
-            value: _(log_json).filter({ message: key }).sumBy('value')
-          }))
-          .value();
-
-        res.status(200).json(result);
-    }
-    catch(e){
-        console.log(e);   
-    }
-})
-
 app.post('/updateFlight', function(req,res){
     try{
         console.log("Inside Update Flight");
@@ -530,6 +517,224 @@ app.post('/GetFlightDetails', function(req,res){
         console.log(e);
     }
 });
+
+app.get('/getAirports', function(req,res){
+    try{
+        var Search_SQL = "SELECT airport FROM airports ";
+
+        mysql.executequery(Search_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of airport sql "+result);
+                res.json({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+});
+
+
+app.post('/getBookingDetails',function(req,res){
+    try {
+        var id = req.body.
+        coll.findOne({}, function(err, result){
+            if (err) {
+                console.log(err);
+
+            } else {
+                console.log("Booking Done!");
+                res.send("Booking Done Successfully!")
+            }
+        });
+    }
+    catch (e){
+        console.log(e);
+    }
+});
+
+
+app.post('/SubmitPaymentDetails',function(req,res){
+
+    try {
+
+        var bType = req.body.bookingType;
+
+
+
+        var userId = global.user;
+
+        var cardNo = req.body.cardNo;
+
+        var cardType = req.body.cardType;
+
+        var cardHolderName = req.body.cardName;
+
+        var expDate = req.body.expiryDate;
+
+        //var billingAddress = req.body.billingAddress;
+
+        var bookingDetails={};
+
+        if(bType=="Hotel"){
+
+            var hotelName = req.body.selectedHotel.hotel_name;
+
+            var price = req.body.selectedRoom.price;
+
+            var roomType = req.body.selectedRoom.room_type;
+
+            var roomNo = req.body.selectedRoom.room_number;
+
+            var roomDesc = req.body.selectedRoom.room_description;
+
+            var checkInDate = req.body.selectedHotel.to_date;
+
+            var checkOutDate = req.body.selectedHotel.from_date;
+
+            var hotelAddress = req.body.selectedHotel.hotel_address;
+
+            bookingDetails={
+
+                'hotelName': hotelName,
+
+                'price': price,
+
+                'roomType':roomType,
+
+                'roomNo':roomNo,
+
+                'roomDesc':roomDesc,
+
+                'hotelAddress':hotelAddress,
+
+                'checkInDate':checkInDate,
+
+                'checkOutDate':checkOutDate
+
+            };
+
+        }else if(bType=="Flight"){
+
+            bookingDetails={
+
+                'hotelName': hotelName,
+
+                'price': price,
+
+                'roomType':roomType,
+
+                'roomNo':roomNo,
+
+                'roomDesc':roomDesc,
+
+                'checkInDate':checkInDate,
+
+                'checkOutDate':checkOutDate
+
+            };
+
+        }else if(bType=="Car") {
+
+            bookingDetails = {
+
+                'hotelName': hotelName,
+
+                'price': price,
+
+                'roomType': roomType,
+
+                'roomNo': roomNo,
+
+                'roomDesc': description,
+
+                'checkInDate': checkInDate,
+
+                'checkOutDate': checkOutDate
+
+            };
+
+        }
+
+        mongo.connect(mongoURL, function(){
+
+            console.log('Connected to mongo at: ' + mongoURL);
+
+            var coll = mongo.collection('BookingDetails');
+
+            var data={
+
+                'bookingType':bType,
+
+                'userId': userId,
+
+                'bookingDetails':bookingDetails,
+
+                'paymentDetails':{
+
+                    'cardNo':cardNo,
+
+                    'cardType':cardType,
+
+                    'cardHolderName':cardHolderName,
+
+                    'expDate':expDate
+
+                }
+
+            };
+
+            coll.insert(data, function(err, result){
+
+                if (err) {
+
+                    console.log(err);
+
+                } else {
+
+                    console.log("Booking Done!");
+
+                    res.send("Booking Done Successfully!")
+
+                }
+
+            });
+
+        });
+
+    }
+
+    catch (e){
+
+        console.log(e);
+
+    }
+
+});
+
+//gives booking confirmation with booking details based on user id
+app.get('/getBookingDetails',function(req,res){
+    try {
+        var username = "rovin284@gmail.com";
+        mongo.connect(mongoURL, function() {
+            var coll = mongo.collection('BookingDetails');
+            coll.findOne({userId: username}, function (err, result) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log("Result ", result);
+                    res.send({'data': result});
+                }
+            });
+        });
+    }
+    catch (e){
+        console.log(e);
+    }
+});
+
 
 
 module.exports = app;

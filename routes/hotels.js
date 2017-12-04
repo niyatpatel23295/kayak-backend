@@ -19,7 +19,22 @@ router.post('/search_hotels', function (req, res, next) {
             }
 
             else {
-                global.hotelSearchResponse = {message: "Success", data: response_kafka};
+
+                //add dates to object
+                var to_date = "to_date";
+                var to_date_value = req.body.filter.to_date;
+                var from_date = "from_date";
+                var from_date_value = req.body.filter.from_date;
+
+                response_kafka[to_date] = to_date_value;
+                response_kafka[from_date] = from_date_value;
+
+                console.log("task.to_date "+response_kafka.to_date);
+                console.log("task.from_date "+response_kafka.from_date);
+
+                console.log("JSON.stringify(response_kafka) "+JSON.stringify(response_kafka));
+
+                global.hotelSearchResponse = {message: "Success", data: response_kafka, dates : {"to_date":to_date_value,"from_date":from_date_value}};
                 res.status(200).send({message: "Success", data: response_kafka});
             }
 
@@ -72,39 +87,6 @@ router.post('/add_hotel', function (req, res, next) {
     }
 });
 
-/*router.post('/update_hotel', function(req, res, next) {
-    try {
-
-        var user_data = {
-            "hotel_name"  : req.body.hotel_name,
-            "hotel_address"  : req.body.hotel_address,
-            "zip_code"  : req.body.zip_code,
-            "hotel_stars"  : req.body.hotel_stars,
-            "hotel_ratings"  : req.body.hotel_ratings,
-            "description"  : req.body.description,
-            "city"  : req.body.city,
-            "hotel_image"  : req.body.hotel_image,
-            "key"       : "update_hotel"
-        }
-        kafka.make_request('hotel_topic',user_data, function(err,response_kafka){
-            console.log("IN RESPONSE");
-            if(err){
-                console.trace(err);
-                res.status(401).json({error: err});
-            }
-            else{
-                console.log("IN SUCCESS BACKEND");
-                res.status(200).send({message: "Success", data : response_kafka});
-            }
-
-        });
-
-    }
-    catch (e){
-        console.log(e);
-        res.send(e);
-    }
-});*/
 
 
 router.post('/get_hotel_details', function (req, res) {
@@ -173,21 +155,13 @@ router.post('/update_hotel', function (req, res) {
 
 
 
-router.get('/search_hotels', function (req, res) {
-    //download file functionality
-    console.log("Backend: " + global.hotelSearchResponse);
-    res.status(201).send(global.hotelSearchResponse);
-    //return global.hotelSearchResponse;
-})
-
-
-
 //get selected hotel to book
 router.post('/get_selected_hotel', function (req, res, next) {
     try {
         var hotel_data = req.body.filter;
+        var dates = global.hotelSearchResponse.dates;
         console.log(hotel_data);
-        global.selectedHotelDetails = {message: "Success", data: hotel_data};
+        global.selectedHotelDetails = {message: "Success", data: hotel_data, dates:dates};
         res.status(200).send({message: "Success", data: hotel_data});
     }
     catch (e) {
@@ -208,8 +182,9 @@ router.get('/get_selected_hotel', function (req, res) {
 router.post('/get_selected_room', function (req, res, next) {
     try {
         var room_data = req.body.filter;
+        var dates = req.body.dates;
         console.log(room_data);
-        global.selectedRoomDetails = {message: "Success", data: room_data};
+        global.selectedRoomDetails = {message: "Success", data: room_data, dates:dates};
         res.status(200).send({message: "Success", data: room_data});
     }
     catch (e) {
@@ -232,5 +207,29 @@ router.get('/search_hotels', function(req, res){
    res.status(201).send(global.hotelSearchResponse);
    //return global.hotelSearchResponse;
 });
+
+router.post('/userLogin', function(req,res){
+    try{
+        var reqUsername = req.body.email;
+        var reqPassword = req.body.password;
+
+        var login_SQL = "select * from users where email='" + reqUsername + "';";
+        console.log("login_SQL "+login_SQL);
+
+        /*mysql.executequery(login_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of login sql "+result);
+                res.json({"data":result});
+            }
+        })*/
+        res.status(200).send();
+    }catch(e){
+        console.log(e);
+    }
+})
+
 
 module.exports = router;
