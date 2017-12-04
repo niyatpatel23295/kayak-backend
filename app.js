@@ -282,7 +282,25 @@ app.get('/getCities', function(req,res){
    }catch(e){
        console.log(e);
    }
-})
+});
+
+app.get('/getAirports', function(req,res){
+    try{
+        var Search_SQL = "SELECT airport FROM airports ";
+
+        mysql.executequery(Search_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of airport sql "+result);
+                res.json({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+});
 
 app.post('/addCars', function(req,res){
     try{
