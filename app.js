@@ -728,6 +728,85 @@ app.get('/getBookingDetails',function(req,res){
                     res.send({'data': result});
                 }
             });
+
+app.post('/SubmitPaymentDetails',function(req,res){
+    try {
+        console.log("req.body -----",JSON.stringify(req.body));
+        var bType = req.body.userdata.bookingType;
+        var userId = req.body.userdata.userId;
+        var username = req.body.userdata.username;
+        var cardNo = req.body.userdata.cardNo;
+        var cardType = req.body.userdata.cardType;
+        var cardHolderName = req.body.userdata.cardHolderName;
+        var expMonth = req.body.userdata.expMonth;
+        var expYear = req.body.userdata.expYear;
+        var billingAddress = req.body.userdata.billingAddress;
+        var bookingDetails={};
+        if(bType=="Hotel"){
+            var hotelName = req.body.userdata.hotelName;
+            var price = req.body.userdata.price;
+            var roomType = req.body.userdata.roomType;
+            var roomNo = req.body.userdata.roomNo;
+            var roomDesc = req.body.userdata.roomDesc;
+            var checkInDate = req.body.userdata.checkInDate;
+            var checkOutDate = req.body.userdata.checkOutDate;
+
+            bookingDetails={
+                'hotelName': hotelName,
+                'price': price,
+                'roomType':roomType,
+                'roomNo':roomNo,
+                'roomDesc':roomDesc,
+                'checkInDate':checkInDate,
+                'checkOutDate':checkOutDate
+            };
+        }else if(bType=="Flight"){
+            bookingDetails={
+                'hotelName': hotelName,
+                'price': price,
+                'roomType':roomType,
+                'roomNo':roomNo,
+                'roomDesc':roomDesc,
+                'checkInDate':checkInDate,
+                'checkOutDate':checkOutDate
+            };
+        }else if(bType=="Car") {
+            bookingDetails = {
+                'hotelName': hotelName,
+                'price': price,
+                'roomType': roomType,
+                'roomNo': roomNo,
+                'roomDesc': roomDesc,
+                'checkInDate': checkInDate,
+                'checkOutDate': checkOutDate
+            };
+        }
+        mongo.connect(mongoURL, function(){
+            console.log('Connected to mongo at: ' + mongoURL);
+            var coll = mongo.collection('BookingDetails');
+            var data={
+                'bookingType':bType,
+                'userId': userId,
+                'username': username,
+                'bookingDetails':bookingDetails,
+                'paymentDetails':{
+                    'cardNo':cardNo,
+                    'cardType':cardType,
+                    'cardHolderName':cardHolderName,
+                    'expMonth':expMonth,
+                    'expYear':expYear
+                },
+                'billingAddress':billingAddress
+            };
+            coll.insert(data, function(err, result){
+                if (err) {
+                    console.log(err);
+
+                } else {
+                    console.log("Booking Done!");
+                    res.send("Booking Done Successfully!")
+                }
+            });
         });
     }
     catch (e){
@@ -735,6 +814,25 @@ app.get('/getBookingDetails',function(req,res){
     }
 });
 
+
+app.post('/getBookingDetails',function(req,res){
+    try {
+        var id = req.body.
+        coll.findOne({}, function(err, result){
+            if (err) {
+                console.log(err);
+
+            } else {
+                console.log("Booking Done!");
+                res.send("Booking Done Successfully!")
+            }
+
+        });
+    }
+    catch (e){
+        console.log(e);
+    }
+});
 
 
 module.exports = app;

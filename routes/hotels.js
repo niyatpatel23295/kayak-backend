@@ -155,11 +155,28 @@ router.post('/update_hotel', function (req, res) {
 
 
 
+
+
+/*
+router.get('/search_hotels', function (req, res) {
+    //download file functionality
+    console.log("Backend: " + global.hotelSearchResponse);
+    res.status(201).send(global.hotelSearchResponse);
+    //return global.hotelSearchResponse;
+})
+*/
+
+
+
 //get selected hotel to book
 router.post('/get_selected_hotel', function (req, res, next) {
     try {
         var hotel_data = req.body.filter;
+
         var dates = global.hotelSearchResponse.dates;
+
+        var dates = req.body.dates;
+
         console.log(hotel_data);
         global.selectedHotelDetails = {message: "Success", data: hotel_data, dates:dates};
         res.status(200).send({message: "Success", data: hotel_data});
