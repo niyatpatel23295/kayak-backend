@@ -8,7 +8,7 @@ var bodyParser = require('body-parser');
 var cors = require('cors');
 var kafka = require('./routes/kafka/client');
 var mysql = require("./routes/mysql");
-var _ = require('lodash');
+
 var multer = require('multer');
 var storage = multer.memoryStorage();
 var upload = multer({ storage: storage });
@@ -18,17 +18,9 @@ var fs_native = require('fs');
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-var winston = require('winston');
+
 //require('./routes/passport')(passport);
-var logger_winston = new (winston.Logger)({
-    transports: [
-       new (winston.transports.File)({
-           name: 'click-logs',
-           filename: 'clicklogs-info.log',
-           level: 'info'
-           })
-    ]
-});
+
 
 
 var routes = require('./routes/index');
@@ -40,7 +32,9 @@ var expressSessions = require("express-session");
 var mongoStore = require("connect-mongo/es5")(expressSessions);
 
 
-var mongo = require("mongodb").MongoClient;
+//var mongo = require("mongodb").MongoClient;
+var mongo = require("./routes/mongo");
+var mongoURL = "mongodb://localhost:27017/login";
 
 
 
@@ -153,7 +147,7 @@ app.post('/signup', function(req, res) {
 
     }
     catch (e){
-        console.log(e);        
+        console.log(e);
         res.send(e);
     }
 });
@@ -231,7 +225,7 @@ app.post('/uploadfile', upload.single('file'), function(req, res) {
     }
     catch (e){
 
-    console.log(e)
+        console.log(e)
     }
 });
 
@@ -275,40 +269,22 @@ app.post('/downloadfile',  function(req, res) {
 });
 
 app.get('/getCities', function(req,res){
-   try{
-       var Search_SQL = "SELECT city_name FROM city ";
-
-       mysql.executequery(Search_SQL, function (err, result) {
-           if (err) {
-               console.log(err);
-           }
-           else {
-               console.log("result of city sql "+result);
-               res.json({"data":result});
-           }
-       })
-   }catch(e){
-       console.log(e);
-   }
-});
-
-app.get('/getAirports', function(req,res){
     try{
-        var Search_SQL = "SELECT airport FROM airports ";
+        var Search_SQL = "SELECT city_name FROM city ";
 
         mysql.executequery(Search_SQL, function (err, result) {
             if (err) {
                 console.log(err);
             }
             else {
-                console.log("result of airport sql "+result);
+                console.log("result of city sql "+result);
                 res.json({"data":result});
             }
         })
     }catch(e){
         console.log(e);
     }
-});
+})
 
 app.post('/addCars', function(req,res){
     try{
@@ -420,46 +396,6 @@ app.post('/sharefile',  function(req, res) {
     }
 });
 
-
-app.post('/logclick', function(req,res){
-    try{
-        logger_winston.info(req.body.component);
-        res.status(200).send();
-    }
-    catch(e){
-        console.log(e);
-        res.status(200).send();
-    }
-});
-
-app.post('/getlogs', function(req,res){
-    try{
-        var log = fs.readFileSync('clicklogs-info.log').toString().split('\n');
-        log.pop();
-        var log_json = [];
-        log.forEach( function(element, index) {
-            // statements
-            var element_json = JSON.parse(element);
-            element_json.value = 1;
-            log_json.push(element_json);
-        });
-
-        var result = _(log_json)
-          .map('message')
-          .uniq()
-          .map(key => ({ 
-            key, 
-            value: _(log_json).filter({ message: key }).sumBy('value')
-          }))
-          .value();
-
-        res.status(200).json(result);
-    }
-    catch(e){
-        console.log(e);   
-    }
-})
-
 app.post('/updateFlight', function(req,res){
     try{
         console.log("Inside Update Flight");
@@ -531,5 +467,126 @@ app.post('/GetFlightDetails', function(req,res){
     }
 });
 
+app.get('/getAirports', function(req,res){
+    try{
+        var Search_SQL = "SELECT airport FROM airports ";
+
+        mysql.executequery(Search_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of airport sql "+result);
+                res.json({"data":result});
+            }
+        })
+    }catch(e){
+        console.log(e);
+    }
+});
+
+app.post('/SubmitPaymentDetails',function(req,res){
+    try {
+        console.log("req.body -----",JSON.stringify(req.body));
+        var bType = req.body.userdata.bookingType;
+        var userId = req.body.userdata.userId;
+        var username = req.body.userdata.username;
+        var cardNo = req.body.userdata.cardNo;
+        var cardType = req.body.userdata.cardType;
+        var cardHolderName = req.body.userdata.cardHolderName;
+        var expMonth = req.body.userdata.expMonth;
+        var expYear = req.body.userdata.expYear;
+        var billingAddress = req.body.userdata.billingAddress;
+        var bookingDetails={};
+        if(bType=="Hotel"){
+            var hotelName = req.body.userdata.hotelName;
+            var price = req.body.userdata.price;
+            var roomType = req.body.userdata.roomType;
+            var roomNo = req.body.userdata.roomNo;
+            var roomDesc = req.body.userdata.roomDesc;
+            var checkInDate = req.body.userdata.checkInDate;
+            var checkOutDate = req.body.userdata.checkOutDate;
+
+            bookingDetails={
+                'hotelName': hotelName,
+                'price': price,
+                'roomType':roomType,
+                'roomNo':roomNo,
+                'roomDesc':roomDesc,
+                'checkInDate':checkInDate,
+                'checkOutDate':checkOutDate
+            };
+        }else if(bType=="Flight"){
+            bookingDetails={
+                'hotelName': hotelName,
+                'price': price,
+                'roomType':roomType,
+                'roomNo':roomNo,
+                'roomDesc':roomDesc,
+                'checkInDate':checkInDate,
+                'checkOutDate':checkOutDate
+            };
+        }else if(bType=="Car") {
+            bookingDetails = {
+                'hotelName': hotelName,
+                'price': price,
+                'roomType': roomType,
+                'roomNo': roomNo,
+                'roomDesc': roomDesc,
+                'checkInDate': checkInDate,
+                'checkOutDate': checkOutDate
+            };
+        }
+        mongo.connect(mongoURL, function(){
+            console.log('Connected to mongo at: ' + mongoURL);
+            var coll = mongo.collection('BookingDetails');
+            var data={
+                'bookingType':bType,
+                'userId': userId,
+                'username': username,
+                'bookingDetails':bookingDetails,
+                'paymentDetails':{
+                    'cardNo':cardNo,
+                    'cardType':cardType,
+                    'cardHolderName':cardHolderName,
+                    'expMonth':expMonth,
+                    'expYear':expYear
+                },
+                'billingAddress':billingAddress
+            };
+            coll.insert(data, function(err, result){
+                if (err) {
+                    console.log(err);
+
+                } else {
+                    console.log("Booking Done!");
+                    res.send("Booking Done Successfully!")
+                }
+            });
+        });
+    }
+    catch (e){
+        console.log(e);
+    }
+});
+
+
+app.post('/getBookingDetails',function(req,res){
+    try {
+        var id = req.body.
+        coll.findOne({}, function(err, result){
+            if (err) {
+                console.log(err);
+
+            } else {
+                console.log("Booking Done!");
+                res.send("Booking Done Successfully!")
+            }
+        });
+    }
+    catch (e){
+        console.log(e);
+    }
+});
 
 module.exports = app;
