@@ -225,28 +225,6 @@ router.get('/search_hotels', function(req, res){
    //return global.hotelSearchResponse;
 });
 
-router.post('/userLogin', function(req,res){
-    try{
-        var reqUsername = req.body.email;
-        var reqPassword = req.body.password;
-
-        var login_SQL = "select * from users where email='" + reqUsername + "';";
-        console.log("login_SQL "+login_SQL);
-
-        /*mysql.executequery(login_SQL, function (err, result) {
-            if (err) {
-                console.log(err);
-            }
-            else {
-                console.log("result of login sql "+result);
-                res.json({"data":result});
-            }
-        })*/
-        res.status(200).send();
-    }catch(e){
-        console.log(e);
-    }
-})
 
 
 module.exports = router;
