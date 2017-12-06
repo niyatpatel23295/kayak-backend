@@ -155,28 +155,11 @@ router.post('/update_hotel', function (req, res) {
 
 
 
-
-
-/*
-router.get('/search_hotels', function (req, res) {
-    //download file functionality
-    console.log("Backend: " + global.hotelSearchResponse);
-    res.status(201).send(global.hotelSearchResponse);
-    //return global.hotelSearchResponse;
-})
-*/
-
-
-
 //get selected hotel to book
 router.post('/get_selected_hotel', function (req, res, next) {
     try {
         var hotel_data = req.body.filter;
-
         var dates = global.hotelSearchResponse.dates;
-
-        var dates = req.body.dates;
-
         console.log(hotel_data);
         global.selectedHotelDetails = {message: "Success", data: hotel_data, dates:dates};
         res.status(200).send({message: "Success", data: hotel_data});
@@ -225,6 +208,28 @@ router.get('/search_hotels', function(req, res){
    //return global.hotelSearchResponse;
 });
 
+router.post('/userLogin', function(req,res){
+    try{
+        var reqUsername = req.body.email;
+        var reqPassword = req.body.password;
+
+        var login_SQL = "select * from users where email='" + reqUsername + "';";
+        console.log("login_SQL "+login_SQL);
+
+        /*mysql.executequery(login_SQL, function (err, result) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                console.log("result of login sql "+result);
+                res.json({"data":result});
+            }
+        })*/
+        res.status(200).send();
+    }catch(e){
+        console.log(e);
+    }
+})
 
 
 module.exports = router;

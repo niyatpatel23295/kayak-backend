@@ -10,6 +10,7 @@ router.post('/search_flights', function(req, res, next) {
             "filter"    : req.body.filter,
             "key"       : "search_flights"
         }
+        console.log("Search_flights filter: "+JSON.stringify(user_data));
         kafka.make_request('flight_topic',user_data, function(err,response_kafka){
             if(err){
                 console.trace(err);
@@ -30,7 +31,7 @@ router.post('/search_flights', function(req, res, next) {
 
 router.get('/search_flights', function(req, res){
     //download file functionality
-    console.log("Backend: "+ global.flightSearchResponse);
+    console.log("Backend: "+ JSON.stringify(global.flightSearchResponse));
     res.status(201).send(global.flightSearchResponse);
 });
 

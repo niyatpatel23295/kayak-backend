@@ -11,16 +11,17 @@ var mysql = require("./routes/mysql");
 
 var multer = require('multer');
 var storage = multer.memoryStorage();
-var upload = multer({storage: storage});
+var upload = multer({ storage: storage });
 var fs = require('fs-extra');
 var fs_native = require('fs');
 const bcrypt = require('bcrypt');
 
 var app = express();
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 //require('./routes/passport')(passport);
+
 
 
 var routes = require('./routes/index');
@@ -35,6 +36,7 @@ var mongoStore = require("connect-mongo/es5")(expressSessions);
 //var mongo = require("mongodb").MongoClient;
 var mongo = require("./routes/mongo");
 var mongoURL = "mongodb://localhost:27017/login";
+
 
 
 // view engine setup
@@ -72,13 +74,103 @@ app.use('/hotels', hotels);
 app.use('/flights', flights);
 app.use('/cars', cars);
 
-app.post('/logout', function (req, res) {
+app.post('/logout', function(req,res) {
     console.log(req.session.user);
     req.session.destroy();
     console.log('Session Destroyed');
-    global.user="";
     res.status(200).send();
 });
+
+
+app.post('/userLogin', function(req,res){
+
+    try{
+
+        var reqUsername = req.body.email;
+
+        var reqPassword = req.body.password;
+
+
+
+        var login_SQL = "select * from users where email='" + reqUsername + "';";
+
+        console.log("login_SQL "+login_SQL);
+
+
+
+        mysql.executequery(login_SQL, function (err, results) {
+
+            if(err){
+
+                console.log(err);
+
+            }
+
+            else{
+
+
+
+                if (results.length > 0) {
+
+
+
+                    var hashedPassword = results[0].password;
+
+                    bcrypt.compare(reqPassword, hashedPassword, function(err, result) {
+
+                        if (err) {
+
+                            console.log('bcrypt - error - ', err);
+
+                            res.status(402).send({message: "Incorrect Password"});
+
+
+
+                        } else {
+
+                            console.log('bcrypt - result - ', result);
+
+                            console.log("User authenticated!");
+
+                            req.session.user = req.body.email;
+
+                            req.session.save();
+
+                            console.log(req.session.user);
+
+                            global.user = req.body.email;
+
+                            console.log("global.user "+global.user);
+
+                            res.status(201).send({message: "Success", data : result});
+
+                        }
+
+                    });
+
+                }
+
+                else {
+
+                    console.log('incorrect password');
+
+                    res.status(401).send({message: "User not registered"});
+
+                }
+
+            }
+
+        });
+
+    }catch(e){
+
+        console.log(e);
+
+    }
+
+});
+
+
 
 
 /*
@@ -166,90 +258,44 @@ app.post('/login', function(req, res) {
 });
 */
 
-app.post('/userLogin', function(req,res){
-    try{
-        var reqUsername = req.body.email;
-        var reqPassword = req.body.password;
-
-        var login_SQL = "select * from users where email='" + reqUsername + "';";
-        console.log("login_SQL "+login_SQL);
-
-        mysql.executequery(login_SQL, function (err, results) {
-            if(err){
-                console.log(err);
-            }
-            else{
-
-                if (results.length > 0) {
-
-                    var hashedPassword = results[0].password;
-                    bcrypt.compare(reqPassword, hashedPassword, function(err, result) {
-                        if (err) {
-                            console.log('bcrypt - error - ', err);
-                            res.status(402).send({message: "Incorrect Password"});
-
-                        } else {
-                            console.log('bcrypt - result - ', result);
-                            console.log("User authenticated!");
-                            req.session.user = req.body.email;
-                            req.session.save();
-                            console.log(req.session.user);
-                            global.user = req.body.email;
-                            console.log("global.user "+global.user);
-                            res.status(201).send({message: "Success", data : result});
-                        }
-                    });
-                }
-                else {
-                    console.log('incorrect password');
-                    res.status(401).send({message: "User not registered"});
-                }
-            }
-        });
-    }catch(e){
-        console.log(e);
-    }
-})
-
-
-app.post('/signup', function (req, res) {
+app.post('/signup', function(req, res) {
     try {
         console.log(user_data);
         var user_data = {
-            "firstName": req.body.firstName,
-            "lastName": req.body.lastName,
-            "address": req.body.address,
-            "city": req.body.city,
-            "zipCode": req.body.zipCode,
-            "phoneNo": req.body.phoneNo,
-            "email": req.body.email,
-            "password": req.body.password,
-            "profilephoto": req.body.profilephoto,
-            "key": "signup_api",
+            "firstName"  : req.body.firstName,
+            "lastName"  : req.body.lastName,
+            "address"     : req.body.address,
+            "city" : req.body.city,
+            "zipCode"  : req.body.zipCode,
+            "phoneNo"  : req.body.phoneNo,
+            "email"  : req.body.email,
+            "password"  : req.body.password,
+            "profilephoto"  : req.body.profilephoto,
+            "key"       : "signup_api",
 
         }
-        kafka.make_request('user_topic', user_data, function (err, response_kafka) {
-            if (err) {
+        kafka.make_request('user_topic',user_data, function(err,response_kafka){
+            if(err){
                 console.trace(err);
                 res.status(401).json({error: err});
             }
-            else {
+            else{
                 console.log("Signup user response ", JSON.stringify(response_kafka));
-                res.status(200).send({message: "Success", data: response_kafka});
+                res.status(200).send({message: "Success", data : response_kafka});
             }
 
         });
 
     }
-    catch (e) {
+    catch (e){
         console.log(e);
         res.send(e);
     }
 });
 
 
-app.post('/addFlight', function (req, res) {
-    try {
+app.post('/addFlight', function(req,res){
+    try{
         console.log("Inside Add Flight");
         var flightName = req.body.flight_name;
         var toAirport = req.body.to_airport;
@@ -260,30 +306,111 @@ app.post('/addFlight', function (req, res) {
         var fair = req.body.fair;
         var flightNumber = req.body.flight_number;
         var duration = req.body.duration;
-        console.log("flight Name " + flightName)
-        console.log("flight Name " + toAirport)
-        console.log("flight Name " + fromAirport)
+        console.log("flight Name "+flightName)
+        console.log("flight Name "+toAirport)
+        console.log("flight Name "+fromAirport)
         //var Search_SQL = "SELECT * FROM flights where hotel_name= "+hotelName;
-        var Search_SQL = "insert into flights (flight_name,to_airport,from_airport,departure,arrival,class,fair,flight_number,duration) values('" + flightName + "','" + toAirport + "','" + fromAirport + "','" + departure + "','" + arrival + "','" + fClass + "','" + fair + "','" + flightNumber + "','" + duration + "');";
-        console.log("Search_SQL ", Search_SQL);
+        var Search_SQL = "insert into flights (flight_name,to_airport,from_airport,departure,arrival,class,fair,flight_number,duration) values('" + flightName + "','" + toAirport + "','" + fromAirport + "','" +departure+ "','" +arrival+ "','" + fClass+ "','" + fair + "','" + flightNumber + "','"+duration+"');";
+        console.log("Search_SQL ",Search_SQL);
         mysql.executequery(Search_SQL, function (err, result) {
             if (err) {
                 console.log(err);
             }
             else {
-                console.log("result of hotel details sql " + result);
-                res.json({"data": result});
+                console.log("result of hotel details sql "+result);
+                res.json({"data":result});
             }
         })
-    } catch (e) {
+    }catch(e){
         console.log(e);
     }
 });
 
 
 
-app.get('/getCities', function (req, res) {
+app.post('/listdir', function(req, res) {
     try {
+        console.log("/listdir", req.body.username);
+        kafka.make_request('new_topic_2',{"username":req.body.username, "path":req.body.path, "key": "list_directory_api"}, function(err,response_kafka){
+            if(err){
+                console.trace(err);
+                res.status(401).json({error: err});
+            }
+            else{
+                console.log("listdir user response ", JSON.stringify(response_kafka));
+                res.status(200).send({message: "Success", data : response_kafka});
+            }
+
+        });
+
+    }
+    catch (e){
+    }
+});
+
+app.post('/uploadfile', upload.single('file'), function(req, res) {
+    try {
+        console.log("/upladfile", req.body.username);
+        kafka.make_request('new_topic_2',{"username":req.body.username, "path": req.body.path,"originalname": req.file.originalname,"encoding": req.file.encoding, "buffer": req.file.buffer ,"key": "upload_dir_api"}, function(err,response_kafka){
+            if(err){
+                console.trace(err);
+                res.status(401).json({error: err});
+            }
+            else{
+                console.log("listdir user response ", JSON.stringify(response_kafka));
+                res.status(200).send({message: "Success", data : response_kafka});
+            }
+
+        });
+
+    }
+    catch (e){
+
+        console.log(e)
+    }
+});
+
+app.post('/downloadfile',  function(req, res) {
+    try {
+        console.log("/downloadfile", req.body.username);
+        kafka.make_request('new_topic_2',{"username":req.body.username, "key": "download_file_api", "path": req.body.path}, function(err,response_kafka){
+            if(err){
+                console.trace(err);
+                res.status(401).json({error: err});
+            }
+            else{
+                console.log("hit here")
+                var options = {
+                    root: '/' ,
+                    dotfiles: 'deny',
+                    headers: {
+                        'x-timestamp': Date.now(),
+                        'x-sent': true
+                    }
+                }
+                var file_buf = new Buffer(response_kafka)
+                fs.writeFileSync('/tmp' + req.body.path, file_buf);
+
+                // console.log("listdir user response ", JSON.stringify(response_kafka));
+                res.sendFile('/tmp' + req.body.path ,options,function (err, res) {
+                    if(err){
+                        console.log(err);
+                    }
+                    else{
+                        console.log(res);
+                    }
+                });
+            }
+
+        });
+    }
+    catch (e){
+        console.log(e)
+    }
+});
+
+app.get('/getCities', function(req,res){
+    try{
         var Search_SQL = "SELECT city_name FROM city ";
 
         mysql.executequery(Search_SQL, function (err, result) {
@@ -291,17 +418,17 @@ app.get('/getCities', function (req, res) {
                 console.log(err);
             }
             else {
-                console.log("result of city sql " + result);
-                res.json({"data": result});
+                console.log("result of city sql "+result);
+                res.json({"data":result});
             }
         })
-    } catch (e) {
+    }catch(e){
         console.log(e);
     }
-});
+})
 
-app.post('/addCars', function (req, res) {
-    try {
+app.post('/addCars', function(req,res){
+    try{
         var car_model = req.body.car_model;
         var no_passangers = req.body.no_passangers;
         var no_largebags = req.body.no_largebags;
@@ -310,18 +437,18 @@ app.post('/addCars', function (req, res) {
         var price = req.body.price;
         var c_name = req.body.city;
         var pickup_address = req.body.pickup_address;
-        var cid = '';
+        var cid ='';
 
-        var findCid = "select cid from city where city_name = '" + c_name + "';";
+        var findCid = "select cid from city where city_name = '"+c_name+"';";
         mysql.executequery(findCid, function (err, result) {
             if (err) {
                 console.log(err);
             }
             else {
                 cid = result[0].cid;
-                console.log("result of City sql " + cid);
+                console.log("result of City sql "+cid);
                 var Search_SQL = "INSERT INTO cars (car_model,cid,no_passangers,no_largebags,no_door,car_class,price,pickup_address) " +
-                    "VALUES('" + car_model + "','" + cid + "'," + no_passangers + "," + no_largebags + "," + no_door + ",'" + car_class + "'," + price + ",'" + pickup_address + "')";
+                    "VALUES('"+car_model+"','"+cid+"',"+no_passangers+","+no_largebags+","+no_door+",'"+car_class+"',"+price+",'"+pickup_address+"')";
 
                 console.log(Search_SQL);
                 mysql.executequery(Search_SQL, function (err, result) {
@@ -329,39 +456,39 @@ app.post('/addCars', function (req, res) {
                         console.log(err);
                     }
                     else {
-                        console.log("result of CAR sql " + result);
-                        res.json({"data": result});
+                        console.log("result of CAR sql "+result);
+                        res.json({"data":result});
                     }
                 })
             }
         })
-    } catch (e) {
+    }catch(e){
         console.log(e);
     }
-});
+})
 
 
-app.post('/get_car_details', function (req, res) {
-    try {
+app.post('/get_car_details', function(req,res){
+    try{
         var car_id = req.body.searchCar_key;
-        console.log("Car Model" + car_id);
-        var findCar = "select * from cars where car_id = '" + car_id + "';";
+        console.log("Car Model"+car_id);
+        var findCar = "select * from cars where car_id = '"+car_id+"';";
         mysql.executequery(findCar, function (err, result) {
             if (err) {
                 console.log(err);
             }
             else {
-                console.log("result of CAR sql " + result);
-                res.send({"data": result});
+                console.log("result of CAR sql "+result);
+                res.send({"data":result});
             }
         })
-    } catch (e) {
+    }catch(e){
         console.log(e);
     }
-});
+})
 
-app.post('/updateCars', function (req, res) {
-    try {
+app.post('/updateCars', function(req,res){
+    try{
         var car_id = req.body.searchCar_key;
         var car_model = req.body.car_model;
         var no_passangers = req.body.no_passangers;
@@ -372,28 +499,46 @@ app.post('/updateCars', function (req, res) {
         var c_name = req.body.city;
         var pickup_address = req.body.pickup_address;
 
-        var update_SQL = "UPDATE cars SET car_model='" + car_model + "' ,no_passangers=" + no_passangers +
-            " ,no_largebags=" + no_largebags + " ,no_door=" + no_door + " ,car_class='" + car_class + "' ,price=" + price +
-            " ,pickup_address= '" + pickup_address + "' where car_id = '" + car_id + "';";
+        var update_SQL = "UPDATE cars SET car_model='"+car_model+"' ,no_passangers="+no_passangers+
+            " ,no_largebags="+no_largebags+" ,no_door="+no_door+" ,car_class='"+car_class+"' ,price="+price+
+            " ,pickup_address= '"+pickup_address+"' where car_id = '"+car_id+"';";
         console.log(update_SQL);
         mysql.executequery(update_SQL, function (err, result) {
             if (err) {
                 console.log(err);
             }
             else {
-                console.log("result of CAR sql " + result);
-                res.json({"data": result});
+                console.log("result of CAR sql "+result);
+                res.json({"data":result});
             }
         });
-    } catch (e) {
+    }catch(e){
         console.log(e);
     }
 })
 
 
-
-app.post('/updateFlight', function (req, res) {
+app.post('/sharefile',  function(req, res) {
     try {
+        console.log("/sharefile");
+        kafka.make_request('new_topic_2',{"username":req.body.username, "shareWith": req.body.sharewith, "path": req.body.path, "key": "share_file_api"}, function(err,response_kafka){
+            if(err){
+                console.trace(err);
+                res.status(401).json({error: err});
+            }
+            else{
+                res.status(200).json({"message": "success", "data": response_kafka});
+            }
+
+        });
+    }
+    catch (e){
+        console.log(e)
+    }
+});
+
+app.post('/updateFlight', function(req,res){
+    try{
         console.log("Inside Update Flight");
         var fid = req.body.searchFlight_key;
         var flightName = req.body.flight_name;
@@ -405,9 +550,9 @@ app.post('/updateFlight', function (req, res) {
         var fair = req.body.fair;
         var flightNumber = req.body.flight_number;
         var duration = req.body.duration;
-        console.log("flight Name " + flightName);
-        console.log("flight Name " + toAirport);
-        console.log("flight Name " + fromAirport);
+        console.log("flight Name "+flightName);
+        console.log("flight Name "+toAirport);
+        console.log("flight Name "+fromAirport);
 
         // UPDATE Customers
         // SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'
@@ -415,56 +560,56 @@ app.post('/updateFlight', function (req, res) {
 
         //var Search_SQL = "SELECT * FROM flights where hotel_name= "+hotelName;
         var Search_SQL = "UPDATE flights SET flight_name = '" + flightName +
-            "',to_airport='" + toAirport +
-            "',from_airport='" + fromAirport +
-            "',departure='" + departure +
-            "',arrival='" + arrival +
-            "',class='" + fClass +
-            "',fair='" + fair +
-            "',flight_number='" + flightNumber +
-            "',duration=" + duration +
-            " where fid =" + fid;
+            "',to_airport='"+toAirport+
+            "',from_airport='"+fromAirport+
+            "',departure='"+departure+
+            "',arrival='"+arrival+
+            "',class='"+fClass+
+            "',fair='"+fair+
+            "',flight_number='"+flightNumber+
+            "',duration="+duration+
+            " where fid ="+fid;
         mysql.executequery(Search_SQL, function (err, result) {
             if (err) {
                 console.log(err);
             }
             else {
-                console.log("result of hotel details sql " + result);
-                res.json({"data": result});
+                console.log("result of hotel details sql "+result);
+                res.json({"data":result});
             }
         })
-    } catch (e) {
+    }catch(e){
         console.log(e);
     }
 });
 
-app.post('/GetFlightDetails', function (req, res) {
-    try {
+app.post('/GetFlightDetails', function(req,res){
+    try{
         var flight_key = req.body.searchFlight_key;
-        console.log("flight_key:" + flight_key);
+        console.log("flight_key:"+flight_key);
 
-        var Search_SQL = "SELECT * FROM flights where fid='" + flight_key + "'";
-        if (flight_key != '') {
+        var Search_SQL = "SELECT * FROM flights where fid='"+flight_key+"'";
+        if(flight_key!= ''){
             mysql.executequery(Search_SQL, function (err, result) {
                 if (err) {
                     console.log(err);
                 }
                 else {
-                    console.log("result of flight sql " + result[0]);
-                    res.send({"data": result});
+                    console.log("result of flight sql "+result[0]);
+                    res.send({"data":result});
                 }
             })
-        } else {
-            res.send({"error_message": "Flight name doesn't exists!"})
+        }else{
+            res.send({"error_message":"Flight name doesn't exists!"})
         }
 
-    } catch (e) {
+    }catch(e){
         console.log(e);
     }
 });
 
-app.get('/getAirports', function (req, res) {
-    try {
+app.get('/getAirports', function(req,res){
+    try{
         var Search_SQL = "SELECT airport FROM airports ";
 
         mysql.executequery(Search_SQL, function (err, result) {
@@ -472,19 +617,20 @@ app.get('/getAirports', function (req, res) {
                 console.log(err);
             }
             else {
-                console.log("result of airport sql " + result);
-                res.json({"data": result});
+                console.log("result of airport sql "+result);
+                res.json({"data":result});
             }
         })
-    } catch (e) {
+    }catch(e){
         console.log(e);
     }
 });
 
 
-app.post('/getBookingDetails', function (req, res) {
+app.post('/getBookingDetails',function(req,res){
     try {
-        var id = req.body.coll.findOne({}, function (err, result) {
+        var id = req.body.
+        coll.findOne({}, function(err, result){
             if (err) {
                 console.log(err);
 
@@ -494,17 +640,18 @@ app.post('/getBookingDetails', function (req, res) {
             }
         });
     }
-    catch (e) {
+    catch (e){
         console.log(e);
     }
 });
 
 
-app.post('/SubmitPaymentDetails', function (req, res) {
+app.post('/SubmitPaymentDetails',function(req,res){
 
     try {
 
         var bType = req.body.bookingType;
+
 
 
         var userId = global.user;
@@ -519,9 +666,9 @@ app.post('/SubmitPaymentDetails', function (req, res) {
 
         //var billingAddress = req.body.billingAddress;
 
-        var bookingDetails = {};
+        var bookingDetails={};
 
-        if (bType == "Hotel") {
+        if(bType=="Hotel"){
 
             var hotelName = req.body.selectedHotel.hotel_name;
 
@@ -539,47 +686,47 @@ app.post('/SubmitPaymentDetails', function (req, res) {
 
             var hotelAddress = req.body.selectedHotel.hotel_address;
 
-            bookingDetails = {
+            bookingDetails={
 
                 'hotelName': hotelName,
 
                 'price': price,
 
-                'roomType': roomType,
+                'roomType':roomType,
 
-                'roomNo': roomNo,
+                'roomNo':roomNo,
 
-                'roomDesc': roomDesc,
+                'roomDesc':roomDesc,
 
-                'hotelAddress': hotelAddress,
+                'hotelAddress':hotelAddress,
 
-                'checkInDate': checkInDate,
+                'checkInDate':checkInDate,
 
-                'checkOutDate': checkOutDate
+                'checkOutDate':checkOutDate
 
             };
 
-        } else if (bType == "Flight") {
+        }else if(bType=="Flight"){
 
-            bookingDetails = {
+            bookingDetails={
 
                 'hotelName': hotelName,
 
                 'price': price,
 
-                'roomType': roomType,
+                'roomType':roomType,
 
-                'roomNo': roomNo,
+                'roomNo':roomNo,
 
-                'roomDesc': roomDesc,
+                'roomDesc':roomDesc,
 
-                'checkInDate': checkInDate,
+                'checkInDate':checkInDate,
 
-                'checkOutDate': checkOutDate
+                'checkOutDate':checkOutDate
 
             };
 
-        } else if (bType == "Car") {
+        }else if(bType=="Car") {
 
             bookingDetails = {
 
@@ -601,35 +748,35 @@ app.post('/SubmitPaymentDetails', function (req, res) {
 
         }
 
-        mongo.connect(mongoURL, function () {
+        mongo.connect(mongoURL, function(){
 
             console.log('Connected to mongo at: ' + mongoURL);
 
             var coll = mongo.collection('BookingDetails');
 
-            var data = {
+            var data={
 
-                'bookingType': bType,
+                'bookingType':bType,
 
                 'userId': userId,
 
-                'bookingDetails': bookingDetails,
+                'bookingDetails':bookingDetails,
 
-                'paymentDetails': {
+                'paymentDetails':{
 
-                    'cardNo': cardNo,
+                    'cardNo':cardNo,
 
-                    'cardType': cardType,
+                    'cardType':cardType,
 
-                    'cardHolderName': cardHolderName,
+                    'cardHolderName':cardHolderName,
 
-                    'expDate': expDate
+                    'expDate':expDate
 
                 }
 
             };
 
-            coll.insert(data, function (err, result) {
+            coll.insert(data, function(err, result){
 
                 if (err) {
 
@@ -649,7 +796,7 @@ app.post('/SubmitPaymentDetails', function (req, res) {
 
     }
 
-    catch (e) {
+    catch (e){
 
         console.log(e);
 
@@ -658,10 +805,10 @@ app.post('/SubmitPaymentDetails', function (req, res) {
 });
 
 //gives booking confirmation with booking details based on user id
-app.get('/getBookingDetails', function (req, res) {
+app.get('/getBookingDetails',function(req,res){
     try {
         var username = "rovin284@gmail.com";
-        mongo.connect(mongoURL, function () {
+        mongo.connect(mongoURL, function() {
             var coll = mongo.collection('BookingDetails');
             coll.findOne({userId: username}, function (err, result) {
                 if (err) {
@@ -671,29 +818,13 @@ app.get('/getBookingDetails', function (req, res) {
                     res.send({'data': result});
                 }
             });
-        })
-    }
-    catch (e) {
-        console.log(e);
-    }
-});
-
-app.post('/getBookingDetails', function (req, res) {
-    try {
-        var id = req.body.coll.findOne({}, function (err, result) {
-            if (err) {
-                console.log(err);
-
-            } else {
-                console.log("Booking Done!");
-                res.send("Booking Done Successfully!")
-            }
-
         });
     }
-    catch (e) {
+    catch (e){
         console.log(e);
     }
 });
+
+
 
 module.exports = app;

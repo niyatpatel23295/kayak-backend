@@ -17,6 +17,7 @@ router.post('/search_cars', function(req, res, next) {
             }
             else{
                 global.carSearchResponse = {message: "Success", data : response_kafka};
+                console.log("CAR RESPONSE:"+JSON.stringify(global.carSearchResponse))
                 res.status(200).send({message: "Success", data : response_kafka});
             }
         });
